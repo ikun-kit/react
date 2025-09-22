@@ -1,0 +1,27 @@
+{
+  "name": "@ikun-kit/react-workspace",
+  "private": true,
+  "scripts": {
+    "build": "pnpm build:pkgs && pnpm build:apps",
+    "build:apps": "pnpm -r --filter ./apps/** run build",
+    "build:pkgs": "pnpm -r --filter './packages/*' run build",
+    "clean": "pnpm clean:pkgs && pnpm clean:apps",
+    "clean:apps": "pnpm -r --filter ./apps/** run clean",
+    "clean:pkgs": "pnpm -r --filter './packages/*' run clean",
+    "dev": "pnpm -r --parallel --filter './packages/*' --filter ./apps/** run dev",
+    "dev:apps": "pnpm -r --filter ./apps/** run dev",
+    "dev:pkgs": "pnpm -r --parallel --filter './packages/*' run dev",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm test:pkgs && pnpm test:apps",
+    "test:apps": "pnpm -r --filter ./apps/** run test",
+    "test:pkgs": "pnpm -r --filter './packages/*' run test"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "prettier": "^3.0.0",
+    "prettier-plugin-packagejson": "^2.5.19",
+    "prettier-plugin-sort-json": "^4.1.1"
+  },
+  "packageManager": "pnpm@10.10.0"
+}

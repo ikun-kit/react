@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "rootDir": "src",
+    "declaration": true,
+    "incremental": false,
+    "tsBuildInfoFile": null,
+    "outDir": "dist",
+    "noEmit": false
+  },
+  "extends": "../../tsconfig.base.json",
+  "include": ["src", "src/types/external.ts", "src/types/internal.ts"]
+}

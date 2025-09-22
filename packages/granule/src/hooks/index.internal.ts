@@ -1,0 +1,1 @@
+export { useInternalGranuleScopeCore } from './useInternalGranuleScopeCore';

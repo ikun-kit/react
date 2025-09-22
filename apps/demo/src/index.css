@@ -1,0 +1,10 @@
+@import 'tailwindcss';
+
+/* Custom gray variations for better dark theme support */
+.bg-gray-650 {
+  background-color: rgb(55 65 81); /* between gray-600 and gray-700 */
+}
+
+.bg-gray-750 {
+  background-color: rgb(31 41 55); /* between gray-700 and gray-800 */
+}
