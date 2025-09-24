@@ -84,6 +84,18 @@ export interface TGranuleScopeSubscriber<K, V> {
 }
 
 /**
+ * 项目引用接口，包含 DOM 引用和自定义 imperative API
+ *
+ * @template T - 自定义 imperative API 的类型
+ */
+export interface TGranuleScopeItemRef<T = any> {
+  /** 项目的 DOM 元素引用 */
+  domRef: React.RefObject<HTMLElement>;
+  /** 项目的自定义 imperative API */
+  imperative?: T;
+}
+
+/**
  * 组合式作用域管理的返回类型
  *
  * @template K - 项目 ID 的类型
@@ -108,4 +120,7 @@ export interface TGranuleScopeResult<K, V> {
 
   /** 作用域容器 DOM 元素的引用 */
   domRef: RefObject<HTMLDivElement>;
+
+  /** 获取指定项目的引用，包含 DOM 和 imperative API */
+  getItemRef: <T = any>(id: K) => TGranuleScopeItemRef<T> | null;
 }

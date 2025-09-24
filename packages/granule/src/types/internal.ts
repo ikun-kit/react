@@ -41,6 +41,15 @@ export interface TGranuleScopeCore<K, V> {
   /** 销毁整个作用域模型，清理所有资源 */
   destroy: () => void;
 
+  /** 注册项目的自定义 imperative API */
+  registerImperative: (id: K, api: any) => void;
+
+  /** 注销项目的自定义 imperative API */
+  unregisterImperative: (id: K) => void;
+
+  /** 获取项目的自定义 imperative API */
+  getImperative: (id: K) => any;
+
   /** 项目级操作 - 针对单个作用域项目的操作 */
   item: {
     /** 触发项目挂载事件（仅负责通知） */

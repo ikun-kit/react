@@ -24,6 +24,18 @@ export function BasicScopeItem(props: BasicScopeItemProps) {
     }
   }, [item]);
 
+  // 暴露 imperative API，提供获取当前 state 的能力
+  useEffect(() => {
+    item.registerImperative({
+      getCurrentState: () => localState,
+      getItemInfo: () => ({
+        id: props.id,
+        state: localState,
+        timestamp: Date.now(),
+      }),
+    });
+  }, [item, localState, props.id]);
+
   useEffect(() => {
     const unsubscribeMount = item.onMount((data: BasicItemState) => {
       console.log('项目已挂载:', data);

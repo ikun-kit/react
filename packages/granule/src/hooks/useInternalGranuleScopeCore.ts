@@ -39,6 +39,9 @@ export const useInternalGranuleScopeCore = <K, V>(
     // 创建事件观察者实例，用于管理所有作用域事件
     const observable = new Observable<TGranuleScopePayloadMap<K, V>>();
 
+    // 创建 imperative API 注册表
+    const imperativeAPIRegistry = new Map<K, any>();
+
     // 项目级操作 - 针对单个作用域项目的操作
     const item: TGranuleScopeCore<K, V>['item'] = {
       /** 触发指定项目的挂载事件 */
@@ -133,7 +136,10 @@ export const useInternalGranuleScopeCore = <K, V>(
         observable.clear(`item:mount:${id}`);
         observable.clear(`item:unmount:${id}`);
 
-        // 3. 最后从状态中删除
+        // 3. 清理该 item 的 imperative API
+        imperativeAPIRegistry.delete(id);
+
+        // 4. 最后从状态中删除
         state.splice(itemIndex, 1);
       },
       move(ids: K[], beforeId?: K) {
@@ -220,6 +226,20 @@ export const useInternalGranuleScopeCore = <K, V>(
     // 销毁函数 - 清理所有观察者和资源
     const destroy: TGranuleScopeCore<K, V>['destroy'] = () => {
       observable.destroy();
+      imperativeAPIRegistry.clear();
+    };
+
+    // imperative API 管理函数
+    const registerImperative = (id: K, api: any) => {
+      imperativeAPIRegistry.set(id, api);
+    };
+
+    const unregisterImperative = (id: K) => {
+      imperativeAPIRegistry.delete(id);
+    };
+
+    const getImperative = (id: K) => {
+      return imperativeAPIRegistry.get(id);
     };
 
     return {
@@ -228,6 +248,9 @@ export const useInternalGranuleScopeCore = <K, V>(
       state,
       destroy,
       domRef,
+      registerImperative,
+      unregisterImperative,
+      getImperative,
     };
   }, [items, domRef]);
 };

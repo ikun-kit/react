@@ -6,7 +6,7 @@
  *
  * 专门设计给项目组件内部使用，已经有 id 上下文，所以操作不需要再传入 id
  */
-import { useContext, useMemo } from 'react';
+import { useContext, useMemo, useEffect } from 'react';
 
 import { GranuleScopeCoreContext } from '../contexts/InternalGranuleScopeLayeredContexts';
 import type { TGranuleScopeItem } from '../types/internal';
@@ -42,6 +42,9 @@ export interface TGranuleScopeItemHookResult<K, V> {
 
   /** 当前项目的 DOM 元素引用 */
   domRef: React.RefObject<HTMLElement>;
+
+  /** 注册当前项目的 imperative API */
+  registerImperative: (api: any) => void;
 }
 
 /**
@@ -125,5 +128,10 @@ export const useGranuleScopeItem = <K, V>(
 
     // DOM 引用
     domRef,
+
+    // imperative API 管理
+    registerImperative: (api: any) => {
+      context.registerImperative(id, api);
+    },
   };
 };

@@ -43,20 +43,26 @@ export const GranuleScopeProvider = <K, V>(
     // 通知卸载事件
     coreContext.item.unmount(id);
 
-    // 立即移除 DOM 元素
-    const element = containerRef.current!.querySelector(
-      `[data-granule-key="${String(id)}"]`,
-    );
-    if (element) {
-      element.remove();
-    }
-
     // 异步卸载 React Root
     const root = rootsRef.current.get(id);
+
     if (root) {
-      rootsRef.current.delete(id);
       window.queueMicrotask(() => {
         try {
+          // 立即移除 DOM 元素
+          const element = containerRef.current!.querySelector(
+            `[data-granule-key="${String(id)}"]`,
+          );
+          if (element) {
+            element.remove();
+          }
+
+          // 清理 imperative API
+          coreContext.unregisterImperative(id);
+
+          // 清理 react root 缓存
+          rootsRef.current.delete(id);
+
           root.unmount();
         } catch (error) {
           console.warn('Error unmounting root for item:', id, error);
@@ -185,9 +191,10 @@ export const GranuleScopeProvider = <K, V>(
       moveDisposer?.();
       console.debug('GranuleScopeProvider cleanup start');
 
-      // 1. 先触发所有项目的卸载事件
+      // 1. 先触发所有项目的卸载事件并清理 imperative API
       coreContext.state.forEach(({ id }) => {
         coreContext.item.unmount(id);
+        coreContext.unregisterImperative(id);
       });
 
       // 2. 立即清理所有 DOM 元素（同步进行）
