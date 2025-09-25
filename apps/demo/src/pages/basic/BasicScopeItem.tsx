@@ -1,4 +1,7 @@
-import { useGranuleScopeItem } from '@ikun-kit/react-granule';
+import {
+  TGranuleScopeItemImperative,
+  useGranuleScopeItem,
+} from '@ikun-kit/react-granule';
 
 import { clsx } from 'clsx';
 import { useEffect, useState } from 'react';
@@ -6,6 +9,18 @@ import { useEffect, useState } from 'react';
 export interface BasicItemState {
   name: string;
   value: number;
+}
+
+/**
+ * BasicScopeItem 的 imperative API 接口
+ */
+export interface BasicItemImperativeAPI extends TGranuleScopeItemImperative {
+  getCurrentState(): BasicItemState;
+  getItemInfo(): {
+    id: string;
+    state: BasicItemState;
+    timestamp: number;
+  };
 }
 
 export interface BasicScopeItemProps {
@@ -26,14 +41,18 @@ export function BasicScopeItem(props: BasicScopeItemProps) {
 
   // 暴露 imperative API，提供获取当前 state 的能力
   useEffect(() => {
-    item.registerImperative({
-      getCurrentState: () => localState,
+    if (!item) return;
+
+    const api: BasicItemImperativeAPI = {
+      getCurrentState: (): BasicItemState => localState,
       getItemInfo: () => ({
         id: props.id,
         state: localState,
         timestamp: Date.now(),
       }),
-    });
+    };
+
+    item.registerImperative(api);
   }, [item, localState, props.id]);
 
   useEffect(() => {

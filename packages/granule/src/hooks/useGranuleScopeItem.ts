@@ -6,7 +6,7 @@
  *
  * 专门设计给项目组件内部使用，已经有 id 上下文，所以操作不需要再传入 id
  */
-import { useContext, useMemo, useEffect } from 'react';
+import { useContext, useMemo } from 'react';
 
 import { GranuleScopeCoreContext } from '../contexts/InternalGranuleScopeLayeredContexts';
 import type { TGranuleScopeItem } from '../types/internal';

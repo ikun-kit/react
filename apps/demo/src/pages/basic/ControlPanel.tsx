@@ -1,12 +1,22 @@
+import {
+  TGranuleScopeController,
+  TGranuleScopeItemImperative,
+  TGranuleScopeItemRef,
+} from '@ikun-kit/react-granule';
+
 import { clsx } from 'clsx';
 import { useState } from 'react';
 
-import { type BasicItemState } from './BasicScopeItem';
+import { BasicItemImperativeAPI, BasicItemState } from './BasicScopeItem';
 
 interface ControlPanelProps {
-  controller: any; // TGranuleScopeController
+  controller: TGranuleScopeController<string, BasicItemState>;
   domRef: React.RefObject<HTMLDivElement>;
-  getItemRef: (id: string) => any; // getItemRef function
+  getItemRef: <
+    T extends TGranuleScopeItemImperative = TGranuleScopeItemImperative,
+  >(
+    id: string,
+  ) => TGranuleScopeItemRef<T> | null;
   onReload: () => void;
 }
 
@@ -39,7 +49,6 @@ export function ControlPanel({
 
       {/* 使用 Grid 布局，每行两块 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-
         {/* 基础操作块 */}
         <div className="bg-gray-700/60 rounded-md p-3">
           <h3 className="text-sm font-medium text-gray-300 mb-2">基础操作</h3>
@@ -73,7 +82,7 @@ export function ControlPanel({
                 // 生成随机 HSL 颜色
                 const hue = Math.floor(Math.random() * 360);
                 const saturation = Math.floor(Math.random() * 40) + 30; // 30-70%
-                const lightness = Math.floor(Math.random() * 20) + 20;  // 20-40%
+                const lightness = Math.floor(Math.random() * 20) + 20; // 20-40%
                 const randomColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 
                 console.log(`new bg: ${randomColor}`);
@@ -170,10 +179,14 @@ export function ControlPanel({
         {/* Imperative API 测试块 - 拆分成两块 */}
         {/* API 状态获取 */}
         <div className="bg-gray-700/60 rounded-md p-3">
-          <h3 className="text-sm font-medium text-gray-300 mb-2">API 状态获取</h3>
+          <h3 className="text-sm font-medium text-gray-300 mb-2">
+            API 状态获取
+          </h3>
           <div className="space-y-2">
             <div>
-              <label className="block text-xs text-gray-400 mb-1">选择项目</label>
+              <label className="block text-xs text-gray-400 mb-1">
+                选择项目
+              </label>
               <select
                 value={selectedItemId}
                 onChange={e => setSelectedItemId(e.target.value)}
@@ -194,7 +207,8 @@ export function ControlPanel({
                   return;
                 }
 
-                const itemRef = getItemRef(selectedItemId);
+                const itemRef =
+                  getItemRef<BasicItemImperativeAPI>(selectedItemId);
                 if (itemRef?.imperative) {
                   const state = itemRef.imperative.getCurrentState();
                   const info = itemRef.imperative.getItemInfo();
@@ -220,7 +234,9 @@ export function ControlPanel({
 
         {/* DOM 操作测试 */}
         <div className="bg-gray-700/60 rounded-md p-3">
-          <h3 className="text-sm font-medium text-gray-300 mb-2">DOM 操作测试</h3>
+          <h3 className="text-sm font-medium text-gray-300 mb-2">
+            DOM 操作测试
+          </h3>
           <div className="space-y-2">
             <ActionButton
               onClick={() => {
@@ -276,7 +292,6 @@ export function ControlPanel({
             </ActionButton>
           </div>
         </div>
-
       </div>
     </div>
   );

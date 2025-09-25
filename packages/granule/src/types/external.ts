@@ -84,11 +84,22 @@ export interface TGranuleScopeSubscriber<K, V> {
 }
 
 /**
+ * 基础 imperative API 接口
+ *
+ * 所有组件的 imperative API 都应该继承这个接口
+ */
+export interface TGranuleScopeItemImperative {
+  [key: string]: any;
+}
+
+/**
  * 项目引用接口，包含 DOM 引用和自定义 imperative API
  *
- * @template T - 自定义 imperative API 的类型
+ * @template T - 自定义 imperative API 的类型，必须继承 TGranuleScopeItemImperative
  */
-export interface TGranuleScopeItemRef<T = any> {
+export interface TGranuleScopeItemRef<
+  T extends TGranuleScopeItemImperative = TGranuleScopeItemImperative,
+> {
   /** 项目的 DOM 元素引用 */
   domRef: React.RefObject<HTMLElement>;
   /** 项目的自定义 imperative API */
@@ -122,5 +133,9 @@ export interface TGranuleScopeResult<K, V> {
   domRef: RefObject<HTMLDivElement>;
 
   /** 获取指定项目的引用，包含 DOM 和 imperative API */
-  getItemRef: <T = any>(id: K) => TGranuleScopeItemRef<T> | null;
+  getItemRef: <
+    T extends TGranuleScopeItemImperative = TGranuleScopeItemImperative,
+  >(
+    id: K,
+  ) => TGranuleScopeItemRef<T> | null;
 }

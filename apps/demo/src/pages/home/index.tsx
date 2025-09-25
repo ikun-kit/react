@@ -33,7 +33,7 @@ export function HomePage() {
             title="React 原生对比"
             description="对比 Granule 与 React 原生状态管理的性能和代码复杂度"
             path="/comparison"
-            isReady={false}
+            isReady
           />
         </div>
 

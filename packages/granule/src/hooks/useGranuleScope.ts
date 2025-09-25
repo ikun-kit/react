@@ -4,11 +4,12 @@
  * 结合了 Provider 和 Controller 的完整解决方案
  * 为根组件提供安全的 API 集合，同时向下注入上下文
  */
-import { createElement, useMemo, useRef, useCallback } from 'react';
+import { createElement, useCallback, useMemo } from 'react';
 
 import { GranuleScopeProvider } from '../components/InternalGranuleScopeProvider';
 import type {
   TGranuleScopeController,
+  TGranuleScopeItemImperative,
   TGranuleScopeItemRef,
   TGranuleScopeResult,
   TGranuleScopeSubscriber,
@@ -111,32 +112,37 @@ export function useGranuleScope<K, V>(
   );
 
   // 获取项目引用的方法
-  const getItemRef = useCallback(<T = any>(id: K): TGranuleScopeItemRef<T> | null => {
-    // 检查项目是否存在
-    const item = scopeCore.state.find(item => item.id === id);
-    if (!item) {
-      return null;
-    }
+  const getItemRef = useCallback(
+    <T extends TGranuleScopeItemImperative = TGranuleScopeItemImperative>(
+      id: K,
+    ): TGranuleScopeItemRef<T> | null => {
+      // 检查项目是否存在
+      const item = scopeCore.state.find(item => item.id === id);
+      if (!item) {
+        return null;
+      }
 
-    // 创建项目 domRef
-    const domRef = {
-      get current() {
-        const container = scopeCore.domRef.current;
-        if (!container) return null;
-        return container.querySelector(
-          `[data-granule-key="${String(id)}"]`,
-        ) as HTMLElement;
-      },
-    } as React.RefObject<HTMLElement>;
+      // 创建项目 domRef
+      const domRef = {
+        get current() {
+          const container = scopeCore.domRef.current;
+          if (!container) return null;
+          return container.querySelector(
+            `[data-granule-key="${String(id)}"]`,
+          ) as HTMLElement;
+        },
+      } as React.RefObject<HTMLElement>;
 
-    // 获取 imperative API
-    const imperative = scopeCore.getImperative(id);
+      // 获取 imperative API
+      const imperative = scopeCore.getImperative(id);
 
-    return {
-      domRef,
-      imperative,
-    };
-  }, [scopeCore]);
+      return {
+        domRef,
+        imperative,
+      };
+    },
+    [scopeCore],
+  );
 
   return {
     Provider,
