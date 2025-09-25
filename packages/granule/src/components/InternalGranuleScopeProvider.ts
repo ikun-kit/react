@@ -27,9 +27,14 @@ import type {
  *
  * @template K - 项目 ID 的类型
  * @template V - 项目状态数据的类型
+ * @template U - 向上通信事件载荷映射类型
  */
-export const GranuleScopeProvider = <K, V>(
-  props: TGranuleScopeProviderProps<K, V>,
+export const GranuleScopeProvider = <
+  K,
+  V,
+  U extends Record<string, any> = Record<string, any>,
+>(
+  props: TGranuleScopeProviderProps<K, V, U>,
 ) => {
   const { context: coreContext, children, ...properties } = props;
   const containerRef = coreContext.domRef;
@@ -106,7 +111,7 @@ export const GranuleScopeProvider = <K, V>(
     root.render(
       createElement(
         GranuleScopeCoreContext.Provider,
-        { value: coreContext },
+        { value: coreContext as any },
         children({ id }),
       ),
     );
@@ -229,7 +234,7 @@ export const GranuleScopeProvider = <K, V>(
 
   return createElement(
     GranuleScopeCoreContext.Provider,
-    { value: coreContext },
+    { value: coreContext as any },
     createElement('div', { ...properties, ref: containerRef }),
   );
 };

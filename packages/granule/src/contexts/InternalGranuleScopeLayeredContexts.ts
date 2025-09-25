@@ -25,5 +25,6 @@ import type { TGranuleScopeCore } from '../types/internal';
  */
 export const GranuleScopeCoreContext = createContext<TGranuleScopeCore<
   any,
-  any
+  any,
+  Record<string, any>
 > | null>(null);

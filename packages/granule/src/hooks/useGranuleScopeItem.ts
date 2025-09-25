@@ -12,7 +12,11 @@ import { GranuleScopeCoreContext } from '../contexts/InternalGranuleScopeLayered
 import type { TGranuleScopeItem } from '../types/internal';
 
 /** 作用域项目 Hook 的返回值类型 */
-export interface TGranuleScopeItemHookResult<K, V> {
+export interface TGranuleScopeItemHookResult<
+  K,
+  V,
+  U extends Record<string, any> = Record<string, any>,
+> {
   /** 当前项目的状态数据 */
   state: V;
 
@@ -45,6 +49,9 @@ export interface TGranuleScopeItemHookResult<K, V> {
 
   /** 注册当前项目的 imperative API */
   registerImperative: (api: any) => void;
+
+  /** 向上发射事件到父组件 */
+  emit: <T extends keyof U>(eventName: T, payload: U[T]) => void;
 }
 
 /**
@@ -55,12 +62,17 @@ export interface TGranuleScopeItemHookResult<K, V> {
  *
  * @template K - 项目 ID 的类型
  * @template V - 项目状态数据的类型
+ * @template U - 向上通信事件载荷映射类型
  * @param id - 项目的唯一标识符
  * @returns 项目管理接口
  */
-export const useGranuleScopeItem = <K, V>(
+export const useGranuleScopeItem = <
+  K,
+  V,
+  U extends Record<string, any> = Record<string, any>,
+>(
   id: K,
-): TGranuleScopeItemHookResult<K, V> => {
+): TGranuleScopeItemHookResult<K, V, U> => {
   const context = useContext(GranuleScopeCoreContext);
 
   if (!context) {
@@ -132,6 +144,12 @@ export const useGranuleScopeItem = <K, V>(
     // imperative API 管理
     registerImperative: (api: any) => {
       context.registerImperative(id, api);
+    },
+
+    // 向上通信
+    emit: <T extends keyof U>(eventName: T, payload: U[T]) => {
+      // 发射事件类型（包含 itemId 和 payload）
+      context.upward.emit(String(eventName), { itemId: id, payload });
     },
   };
 };

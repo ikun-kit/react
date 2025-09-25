@@ -6,6 +6,8 @@ import {
 import { clsx } from 'clsx';
 import { useEffect, useState } from 'react';
 
+import type { BasicScopeUpwardPayloadMap } from './types';
+
 export interface BasicItemState {
   name: string;
   value: number;
@@ -28,7 +30,11 @@ export interface BasicScopeItemProps {
 }
 
 export function BasicScopeItem(props: BasicScopeItemProps) {
-  const item = useGranuleScopeItem<string, BasicItemState>(props.id);
+  const item = useGranuleScopeItem<
+    string,
+    BasicItemState,
+    BasicScopeUpwardPayloadMap
+  >(props.id);
   const [localState, setLocalState] = useState(
     item?.state || { name: '', value: 0 },
   );
@@ -126,9 +132,17 @@ export function BasicScopeItem(props: BasicScopeItemProps) {
         <div className="flex items-center gap-2 flex-wrap">
           <ActionButton
             onClick={() => {
+              const newValue = localState.value + 1;
               item.update({
                 ...localState,
-                value: localState.value + 1,
+                value: newValue,
+              });
+
+              // 发射向上事件：值发生变化
+              item.emit('value-changed', {
+                oldValue: localState.value,
+                newValue: newValue,
+                itemName: localState.name,
               });
             }}
             variant="success"
@@ -139,9 +153,17 @@ export function BasicScopeItem(props: BasicScopeItemProps) {
 
           <ActionButton
             onClick={() => {
+              const newValue = Math.max(0, localState.value - 1);
               item.update({
                 ...localState,
-                value: Math.max(0, localState.value - 1),
+                value: newValue,
+              });
+
+              // 发射向上事件：值发生变化
+              item.emit('value-changed', {
+                oldValue: localState.value,
+                newValue: newValue,
+                itemName: localState.name,
               });
             }}
             variant="danger"

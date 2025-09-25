@@ -84,6 +84,24 @@ export interface TGranuleScopeSubscriber<K, V> {
 }
 
 /**
+ * 向上通信订阅器接口
+ * 专门用于订阅子组件向父组件发送的事件
+ *
+ * @template K - 项目 ID 的类型
+ * @template U - 向上通信事件载荷映射类型
+ */
+export interface TGranuleScopeUpwardSubscriber<
+  K,
+  U extends Record<string, any> = Record<string, any>,
+> {
+  /** 订阅所有项目的特定事件类型 */
+  on: <T extends keyof U>(
+    eventName: T,
+    callback: (itemId: K, payload: U[T]) => void,
+  ) => () => void;
+}
+
+/**
  * 基础 imperative API 接口
  *
  * 所有组件的 imperative API 都应该继承这个接口
@@ -111,8 +129,13 @@ export interface TGranuleScopeItemRef<
  *
  * @template K - 项目 ID 的类型
  * @template V - 项目状态数据的类型
+ * @template U - 向上通信事件载荷映射类型
  */
-export interface TGranuleScopeResult<K, V> {
+export interface TGranuleScopeResult<
+  K,
+  V,
+  U extends Record<string, any> = Record<string, any>,
+> {
   /** 上下文提供者组件 */
   Provider: ComponentType<{
     children: {
@@ -128,6 +151,9 @@ export interface TGranuleScopeResult<K, V> {
 
   /** 事件订阅器 API */
   subscriber: TGranuleScopeSubscriber<K, V>;
+
+  /** 向上通信订阅器 API */
+  upwardSubscriber: TGranuleScopeUpwardSubscriber<K, U>;
 
   /** 作用域容器 DOM 元素的引用 */
   domRef: RefObject<HTMLDivElement>;

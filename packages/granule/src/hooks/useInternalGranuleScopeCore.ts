@@ -25,12 +25,17 @@ import { Observable } from '../utils/observable';
  * @internal
  * @template K - 项目 ID 的类型
  * @template V - 项目状态数据的类型
+ * @template U - 向上通信事件载荷映射类型
  * @param items - 初始的作用域项目列表
  * @returns 作用域核心模型实例，包含完整的内部管理功能
  */
-export const useInternalGranuleScopeCore = <K, V>(
+export const useInternalGranuleScopeCore = <
+  K,
+  V,
+  U extends Record<string, any> = Record<string, any>,
+>(
   items: Array<TGranuleScopeItem<K, V>>,
-): TGranuleScopeCore<K, V> => {
+): TGranuleScopeCore<K, V, U> => {
   const domRef = useRef<HTMLDivElement>(null);
 
   return useMemo(() => {
@@ -38,6 +43,8 @@ export const useInternalGranuleScopeCore = <K, V>(
     const state = [...items];
     // 创建事件观察者实例，用于管理所有作用域事件
     const observable = new Observable<TGranuleScopePayloadMap<K, V>>();
+    // 创建向上通信的事件观察者实例
+    const upwardObservableInstance = new Observable<U>();
 
     // 创建 imperative API 注册表
     const imperativeAPIRegistry = new Map<K, any>();
@@ -226,7 +233,21 @@ export const useInternalGranuleScopeCore = <K, V>(
     // 销毁函数 - 清理所有观察者和资源
     const destroy: TGranuleScopeCore<K, V>['destroy'] = () => {
       observable.destroy();
+      upwardObservableInstance.destroy();
       imperativeAPIRegistry.clear();
+    };
+
+    // 向上通信操作 - 封装向上事件的发射和订阅功能
+    const upward: TGranuleScopeCore<K, V, U>['upward'] = {
+      /** 发射向上事件到父组件 */
+      emit: (eventName: any, payload: any) => {
+        upwardObservableInstance.broadcast(String(eventName), payload);
+      },
+
+      /** 订阅来自子组件的向上事件 */
+      subscribe: (eventName: any, callback: (payload: any) => void) => {
+        return upwardObservableInstance.subscribe(String(eventName), callback);
+      },
     };
 
     // imperative API 管理函数
@@ -245,6 +266,7 @@ export const useInternalGranuleScopeCore = <K, V>(
     return {
       item,
       list,
+      upward,
       state,
       destroy,
       domRef,

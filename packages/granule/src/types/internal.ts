@@ -30,8 +30,13 @@ export type TGranuleScopeItem<K, V> = {
  *
  * @template K - 项目 ID 的类型
  * @template V - 项目状态数据的类型
+ * @template U - 向上通信事件载荷映射类型
  */
-export interface TGranuleScopeCore<K, V> {
+export interface TGranuleScopeCore<
+  K,
+  V,
+  U extends Record<string, any> = Record<string, any>,
+> {
   /** 当前所有作用域项目的状态数组 */
   state: Array<TGranuleScopeItem<K, V>>;
 
@@ -49,6 +54,18 @@ export interface TGranuleScopeCore<K, V> {
 
   /** 获取项目的自定义 imperative API */
   getImperative: (id: K) => any;
+
+  /** 向上通信操作 - 专门处理子组件向父组件的事件通信 */
+  upward: {
+    /** 发射向上事件 */
+    emit: <T extends keyof U>(eventName: T, payload: U[T]) => void;
+
+    /** 订阅向上事件 */
+    subscribe: <T extends keyof U>(
+      eventName: T,
+      callback: (payload: U[T]) => void,
+    ) => () => void;
+  };
 
   /** 项目级操作 - 针对单个作用域项目的操作 */
   item: {
@@ -112,11 +129,15 @@ export interface TGranuleScopeCore<K, V> {
  *
  * @template K - 项目 ID 的类型
  * @template V - 项目状态数据的类型
+ * @template U - 向上通信事件载荷映射类型
  */
-export interface TGranuleScopeProviderProps<K, V>
-  extends Partial<Omit<HTMLAttributes<HTMLDivElement>, 'children'>> {
+export interface TGranuleScopeProviderProps<
+  K,
+  V,
+  U extends Record<string, any> = Record<string, any>,
+> extends Partial<Omit<HTMLAttributes<HTMLDivElement>, 'children'>> {
   /** 作用域核心模型实例，提供内部状态管理功能 */
-  context: TGranuleScopeCore<K, V>;
+  context: TGranuleScopeCore<K, V, U>;
 
   /**
    * 子组件渲染函数，包含两个必需的方法：

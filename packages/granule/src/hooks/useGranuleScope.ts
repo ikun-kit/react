@@ -13,6 +13,7 @@ import type {
   TGranuleScopeItemRef,
   TGranuleScopeResult,
   TGranuleScopeSubscriber,
+  TGranuleScopeUpwardSubscriber,
 } from '../types/external';
 import type {
   TGranuleScopeInsertPayload,
@@ -31,13 +32,16 @@ import { useInternalGranuleScopeCore } from './useInternalGranuleScopeCore';
  *
  * @template K - 项目 ID 的类型
  * @template V - 项目状态数据的类型
+ * @template U - 向上通信事件载荷映射类型
  * @param data - 初始的作用域项目列表
  * @returns 包含 Provider 和 controller 的对象
  */
-export function useGranuleScope<K, V>(
-  data: Array<TGranuleScopeItem<K, V>>,
-): TGranuleScopeResult<K, V> {
-  const scopeCore = useInternalGranuleScopeCore<K, V>(data);
+export function useGranuleScope<
+  K,
+  V,
+  U extends Record<string, any> = Record<string, any>,
+>(data: Array<TGranuleScopeItem<K, V>>): TGranuleScopeResult<K, V, U> {
+  const scopeCore = useInternalGranuleScopeCore<K, V, U>(data);
 
   // 创建安全的控制器 API
   const controller = useMemo((): TGranuleScopeController<K, V> => {
@@ -99,11 +103,31 @@ export function useGranuleScope<K, V>(
     };
   }, [scopeCore]);
 
+  // 创建向上通信订阅器 API
+  const upwardSubscriber = useMemo((): TGranuleScopeUpwardSubscriber<K, U> => {
+    return {
+      on: <T extends keyof U>(
+        eventName: T,
+        callback: (itemId: K, payload: U[T]) => void,
+      ) => {
+        return scopeCore.upward.subscribe(String(eventName), (data: any) => {
+          if (
+            data &&
+            typeof data === 'object' &&
+            'itemId' in data &&
+            'payload' in data
+          ) {
+            callback(data.itemId as K, data.payload);
+          }
+        });
+      },
+    };
+  }, [scopeCore]);
+
   // 预配置 context 的 Provider
   const Provider = useMemo(
-    () => (props: Omit<TGranuleScopeProviderProps<K, V>, 'context'>) => {
-      console.log('memo use granule scope provider');
-      return createElement(GranuleScopeProvider<K, V>, {
+    () => (props: Omit<TGranuleScopeProviderProps<K, V, U>, 'context'>) => {
+      return createElement(GranuleScopeProvider<K, V, U>, {
         context: scopeCore,
         ...props,
       });
@@ -148,6 +172,7 @@ export function useGranuleScope<K, V>(
     Provider,
     controller,
     subscriber,
+    upwardSubscriber,
     domRef: scopeCore.domRef,
     getItemRef,
   };
