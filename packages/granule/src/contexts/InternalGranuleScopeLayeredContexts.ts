@@ -12,10 +12,6 @@
  */
 import { createContext } from 'react';
 
-import type {
-  TGranuleScopeController,
-  TGranuleScopeSubscriber,
-} from '../types/external';
 import type { TGranuleScopeCore } from '../types/internal';
 
 /**
@@ -26,5 +22,5 @@ import type { TGranuleScopeCore } from '../types/internal';
 export const GranuleScopeCoreContext = createContext<TGranuleScopeCore<
   any,
   any,
-  Record<string, any>
+  Record<string, (...args: any[]) => any>
 > | null>(null);

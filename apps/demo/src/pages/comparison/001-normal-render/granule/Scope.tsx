@@ -3,7 +3,10 @@ import {
   useGranuleScope,
 } from '@ikun-kit/react-granule';
 
+import { useEffect, useRef } from 'react';
+
 import { type GranuleItemState, GranuleScopeItem } from './ScopeItem';
+import { ScopeUpwardPayloadMap } from './types';
 
 function ItemContainer(props: { id: string }) {
   return <GranuleScopeItem {...props} />;
@@ -19,10 +22,29 @@ interface GranuleScopeProps {
 }
 
 export function GranuleScope({ data }: GranuleScopeProps) {
-  const { Provider, controller, domRef, getItemRef } = useGranuleScope<
+  const { Provider, controller, upwardSubscriber } = useGranuleScope<
     string,
-    GranuleItemState
+    GranuleItemState,
+    ScopeUpwardPayloadMap
   >(data);
+
+  const mountedItems = useRef<string[]>([]);
+
+  useEffect(() => {
+    const unsubscribeMount = upwardSubscriber.on('mounted', itemId => {
+      if (!mountedItems.current.includes(itemId)) {
+        mountedItems.current.push(itemId);
+      }
+      if (mountedItems.current.length >= controller.getState().length) {
+        // TODO: 标记完成所有节点挂载
+        console.log('All items mounted');
+      }
+    });
+
+    return () => {
+      unsubscribeMount();
+    };
+  });
 
   // TODO: 缺少向下暴露通信接口
 

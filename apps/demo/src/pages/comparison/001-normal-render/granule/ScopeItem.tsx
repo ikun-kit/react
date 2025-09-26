@@ -2,6 +2,8 @@ import { useGranuleScopeItem } from '@ikun-kit/react-granule';
 
 import { useEffect } from 'react';
 
+import { ScopeUpwardPayloadMap } from './types';
+
 export interface GranuleItemState {
   name: string;
   value: number;
@@ -12,13 +14,17 @@ export interface GranuleScopeItemProps {
 }
 
 export function GranuleScopeItem(props: GranuleScopeItemProps) {
-  const { state: localState, onMount } = useGranuleScopeItem<
-    string,
-    GranuleItemState
-  >(props.id);
+  const {
+    state: localState,
+    onMount,
+    emit,
+  } = useGranuleScopeItem<string, GranuleItemState, ScopeUpwardPayloadMap>(
+    props.id,
+  );
 
   useEffect(() => {
     const unsubscribeMount = onMount((data: GranuleItemState) => {
+      emit('mounted', props.id);
       console.log('项目已挂载:', data);
     });
 

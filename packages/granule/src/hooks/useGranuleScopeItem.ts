@@ -10,12 +10,16 @@ import { useContext, useMemo } from 'react';
 
 import { GranuleScopeCoreContext } from '../contexts/InternalGranuleScopeLayeredContexts';
 import type { TGranuleScopeItem } from '../types/internal';
+import type { ExtractPayload } from '../utils/observable';
 
 /** 作用域项目 Hook 的返回值类型 */
 export interface TGranuleScopeItemHookResult<
   K,
   V,
-  U extends Record<string, any> = Record<string, any>,
+  U extends { [K in keyof U]: (...args: any[]) => any } = Record<
+    string,
+    (...args: any[]) => any
+  >,
 > {
   /** 当前项目的状态数据 */
   state: V;
@@ -51,7 +55,10 @@ export interface TGranuleScopeItemHookResult<
   registerImperative: (api: any) => void;
 
   /** 向上发射事件到父组件 */
-  emit: <T extends keyof U>(eventName: T, payload: U[T]) => void;
+  emit: <T extends keyof U>(
+    eventName: T,
+    ...payload: ExtractPayload<U, T>
+  ) => void;
 }
 
 /**
@@ -69,7 +76,7 @@ export interface TGranuleScopeItemHookResult<
 export const useGranuleScopeItem = <
   K,
   V,
-  U extends Record<string, any> = Record<string, any>,
+  U extends { [K in keyof U]: (...args: any[]) => any },
 >(
   id: K,
 ): TGranuleScopeItemHookResult<K, V, U> => {
@@ -147,9 +154,15 @@ export const useGranuleScopeItem = <
     },
 
     // 向上通信
-    emit: <T extends keyof U>(eventName: T, payload: U[T]) => {
+    emit: <T extends keyof U>(
+      eventName: T,
+      ...payload: ExtractPayload<U, T>
+    ) => {
       // 发射事件类型（包含 itemId 和 payload）
-      context.upward.emit(String(eventName), { itemId: id, payload });
+      context.upward.emit(eventName as any, {
+        itemId: id,
+        payload: payload[0],
+      });
     },
   };
 };

@@ -10,6 +10,8 @@
  */
 import type { HTMLAttributes, ReactNode, RefObject } from 'react';
 
+import type { ExtractCallback, ExtractPayload } from '../utils/observable';
+
 /**
  * 作用域项目的基础数据结构
  *
@@ -35,7 +37,10 @@ export type TGranuleScopeItem<K, V> = {
 export interface TGranuleScopeCore<
   K,
   V,
-  U extends Record<string, any> = Record<string, any>,
+  U extends { [K in keyof U]: (...args: any[]) => any } = Record<
+    string,
+    (...args: any[]) => any
+  >,
 > {
   /** 当前所有作用域项目的状态数组 */
   state: Array<TGranuleScopeItem<K, V>>;
@@ -58,12 +63,15 @@ export interface TGranuleScopeCore<
   /** 向上通信操作 - 专门处理子组件向父组件的事件通信 */
   upward: {
     /** 发射向上事件 */
-    emit: <T extends keyof U>(eventName: T, payload: U[T]) => void;
+    emit: <T extends keyof U>(
+      eventName: T,
+      ...payload: ExtractPayload<U, T>
+    ) => void;
 
     /** 订阅向上事件 */
     subscribe: <T extends keyof U>(
       eventName: T,
-      callback: (payload: U[T]) => void,
+      callback: ExtractCallback<U, T>,
     ) => () => void;
   };
 
@@ -134,7 +142,10 @@ export interface TGranuleScopeCore<
 export interface TGranuleScopeProviderProps<
   K,
   V,
-  U extends Record<string, any> = Record<string, any>,
+  U extends { [K in keyof U]: (...args: any[]) => any } = Record<
+    string,
+    (...args: any[]) => any
+  >,
 > extends Partial<Omit<HTMLAttributes<HTMLDivElement>, 'children'>> {
   /** 作用域核心模型实例，提供内部状态管理功能 */
   context: TGranuleScopeCore<K, V, U>;
@@ -201,28 +212,28 @@ export type TGranuleScopeClearPayload<K, V> = {
 };
 
 /**
- * 完整的事件映射类型定义
+ * 完整的事件回调函数映射类型定义
  *
  * ⚠️ 内部使用 - 使用 TypeScript 模板字面量类型实现类型安全的事件系统
- * 每个事件名称都对应特定的载荷类型
+ * 每个事件名称都对应特定的回调函数类型
  *
  * @template K - 项目 ID 的类型
  * @template V - 项目状态数据的类型
  */
 export type TGranuleScopePayloadMap<K, V> = {
-  /** 项目更新事件映射：item:update:${string} -> V */
-  [E in `item:update:${string}`]: V;
+  /** 项目更新事件映射：item:update:${string} -> (data: V) => void */
+  [E in `item:update:${string}`]: (data: V) => void;
 } & {
-  /** 项目挂载事件映射：item:mount:${string} -> V */
-  [E in `item:mount:${string}`]: V;
+  /** 项目挂载事件映射：item:mount:${string} -> (data: V) => void */
+  [E in `item:mount:${string}`]: (data: V) => void;
 } & {
-  /** 项目卸载事件映射：item:unmount:${string} -> V */
-  [E in `item:unmount:${string}`]: V;
+  /** 项目卸载事件映射：item:unmount:${string} -> (data: V) => void */
+  [E in `item:unmount:${string}`]: (data: V) => void;
 } & {
-  /** 列表插入事件：载荷包含插入的项目信息 */
-  'list:insert': TGranuleScopeInsertPayload<K, V>;
-  /** 列表删除事件：载荷为被删除项目的 ID */
-  'list:delete': K;
-  /** 列表移动事件：载荷包含移动的项目信息 */
-  'list:move': TGranuleScopeMovePayload<K>;
+  /** 列表插入事件：回调函数接收插入的项目信息 */
+  'list:insert': (payload: TGranuleScopeInsertPayload<K, V>) => void;
+  /** 列表删除事件：回调函数接收被删除项目的 ID */
+  'list:delete': (id: K) => void;
+  /** 列表移动事件：回调函数接收移动的项目信息 */
+  'list:move': (payload: TGranuleScopeMovePayload<K>) => void;
 };

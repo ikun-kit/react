@@ -1,23 +1,40 @@
-/** 事件处理函数类型 */
-export type EventHandler<T = any> = (event: T) => void;
 /** 取消订阅函数类型 */
 export type Disposer = () => void;
+
+/** 从回调函数映射中提取指定事件的载荷类型 */
+export type ExtractPayload<
+  CallbackMap extends Record<string, (...args: any[]) => any>,
+  K extends keyof CallbackMap,
+> = Parameters<CallbackMap[K]>;
+
+/** 从回调函数映射中提取指定事件的回调函数类型 */
+export type ExtractCallback<
+  CallbackMap extends Record<string, (...args: any[]) => any>,
+  K extends keyof CallbackMap,
+> = CallbackMap[K];
 
 /**
  * 类型安全的观察者模式实现
  *
- * 支持泛型载荷映射，提供完整的事件发布订阅功能
+ * 支持泛型回调函数映射，提供完整的事件发布订阅功能
  */
-export class Observable<PayloadMap = Record<string, never>> {
+export class Observable<
+  CallbackMap extends {
+    [K in keyof CallbackMap]: (...args: any[]) => any;
+  } = Record<string, (...args: any[]) => any>,
+> {
   /** 事件名称到处理函数集合的映射 */
-  private readonly handlerMap = new Map<keyof PayloadMap, Set<EventHandler>>();
+  private readonly handlerMap = new Map<
+    keyof CallbackMap,
+    Set<CallbackMap[keyof CallbackMap]>
+  >();
   /** 调试模式开关 */
   private debugMode = false;
 
   /** 订阅指定事件 */
-  subscribe<K extends keyof PayloadMap>(
+  subscribe<K extends keyof CallbackMap>(
     event: K,
-    handler: EventHandler<PayloadMap[K]>,
+    handler: CallbackMap[K],
   ): Disposer {
     if (!this.handlerMap.has(event)) {
       this.handlerMap.set(event, new Set());
@@ -29,9 +46,9 @@ export class Observable<PayloadMap = Record<string, never>> {
   }
 
   /** 取消指定事件的订阅 */
-  unsubscribe<K extends keyof PayloadMap>(
+  unsubscribe<K extends keyof CallbackMap>(
     event: K,
-    handler: EventHandler<PayloadMap[K]>,
+    handler: CallbackMap[K],
   ): void {
     const handlers = this.handlerMap.get(event);
     if (handlers) {
@@ -43,9 +60,9 @@ export class Observable<PayloadMap = Record<string, never>> {
   }
 
   /** 向所有订阅者广播事件 */
-  broadcast<K extends keyof PayloadMap>(
+  broadcast<K extends keyof CallbackMap>(
     event: K,
-    payload: PayloadMap[K],
+    ...payload: Parameters<CallbackMap[K]>
   ): void {
     const handlers = this.handlerMap.get(event);
     if (!handlers) return;
@@ -61,7 +78,7 @@ export class Observable<PayloadMap = Record<string, never>> {
 
     handlers.forEach(handler => {
       try {
-        handler(payload);
+        handler(...payload);
       } catch (error) {
         console.error(
           `[Observable] Error in event "${String(event)}" callback:`,
@@ -80,25 +97,25 @@ export class Observable<PayloadMap = Record<string, never>> {
   }
 
   /** 一次性订阅，触发后自动取消 */
-  once<K extends keyof PayloadMap>(
+  once<K extends keyof CallbackMap>(
     event: K,
-    handler: EventHandler<PayloadMap[K]>,
+    handler: CallbackMap[K],
   ): Disposer {
-    const onceHandler = (payload: PayloadMap[K]) => {
-      handler(payload);
-      this.unsubscribe(event, onceHandler);
-    };
+    const onceHandler = ((...args: Parameters<CallbackMap[K]>) => {
+      handler(...args);
+      this.unsubscribe(event, onceHandler as CallbackMap[K]);
+    }) as CallbackMap[K];
 
     return this.subscribe(event, onceHandler);
   }
 
   /** 获取指定事件的订阅者数量 */
-  count<K extends keyof PayloadMap>(event: K): number {
+  count<K extends keyof CallbackMap>(event: K): number {
     return this.handlerMap.get(event)?.size ?? 0;
   }
 
   /** 清除指定事件或所有事件的监听器 */
-  clear<K extends keyof PayloadMap>(event?: K): void {
+  clear<K extends keyof CallbackMap>(event?: K): void {
     if (event !== undefined) {
       this.handlerMap.delete(event);
     } else {
@@ -107,7 +124,7 @@ export class Observable<PayloadMap = Record<string, never>> {
   }
 
   /** 获取所有已注册的事件名称 */
-  get events(): (keyof PayloadMap)[] {
+  get events(): (keyof CallbackMap)[] {
     return Array.from(this.handlerMap.keys());
   }
 

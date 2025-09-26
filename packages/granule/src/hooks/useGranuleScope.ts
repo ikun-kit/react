@@ -108,18 +108,18 @@ export function useGranuleScope<
     return {
       on: <T extends keyof U>(
         eventName: T,
-        callback: (itemId: K, payload: U[T]) => void,
+        callback: (itemId: K, ...payload: Parameters<U[T]>) => void,
       ) => {
-        return scopeCore.upward.subscribe(String(eventName), (data: any) => {
+        return scopeCore.upward.subscribe(eventName, ((data: any) => {
           if (
             data &&
             typeof data === 'object' &&
             'itemId' in data &&
             'payload' in data
           ) {
-            callback(data.itemId as K, data.payload);
+            callback(data.itemId as K, ...data.payload);
           }
-        });
+        }) as U[T]);
       },
     };
   }, [scopeCore]);

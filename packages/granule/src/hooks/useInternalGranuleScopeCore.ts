@@ -18,6 +18,7 @@ import type {
   TGranuleScopePayloadMap,
 } from '../types/internal';
 import { Observable } from '../utils/observable';
+import type { ExtractCallback, ExtractPayload } from '../utils/observable';
 
 /**
  * 创建作用域核心模型的 Hook（内部使用）
@@ -32,7 +33,10 @@ import { Observable } from '../utils/observable';
 export const useInternalGranuleScopeCore = <
   K,
   V,
-  U extends Record<string, any> = Record<string, any>,
+  U extends { [K in keyof U]: (...args: any[]) => any } = Record<
+    string,
+    (...args: any[]) => any
+  >,
 >(
   items: Array<TGranuleScopeItem<K, V>>,
 ): TGranuleScopeCore<K, V, U> => {
@@ -183,7 +187,7 @@ export const useInternalGranuleScopeCore = <
           .map((index, i) => ({ index, id: ids[i] }))
           .sort((a, b) => b.index - a.index);
 
-        for (const { index, id } of sortedIndexes) {
+        for (const { index } of sortedIndexes) {
           const [item] = state.splice(index, 1);
           itemsToMove.unshift(item); // 维持原始顺序
         }
@@ -240,13 +244,19 @@ export const useInternalGranuleScopeCore = <
     // 向上通信操作 - 封装向上事件的发射和订阅功能
     const upward: TGranuleScopeCore<K, V, U>['upward'] = {
       /** 发射向上事件到父组件 */
-      emit: (eventName: any, payload: any) => {
-        upwardObservableInstance.broadcast(String(eventName), payload);
+      emit: <T extends keyof U>(
+        eventName: T,
+        ...payload: ExtractPayload<U, T>
+      ) => {
+        upwardObservableInstance.broadcast(eventName, ...payload);
       },
 
       /** 订阅来自子组件的向上事件 */
-      subscribe: (eventName: any, callback: (payload: any) => void) => {
-        return upwardObservableInstance.subscribe(String(eventName), callback);
+      subscribe: <T extends keyof U>(
+        eventName: T,
+        callback: ExtractCallback<U, T>,
+      ) => {
+        return upwardObservableInstance.subscribe(eventName, callback);
       },
     };
 

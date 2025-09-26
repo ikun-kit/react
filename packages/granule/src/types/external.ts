@@ -92,12 +92,15 @@ export interface TGranuleScopeSubscriber<K, V> {
  */
 export interface TGranuleScopeUpwardSubscriber<
   K,
-  U extends Record<string, any> = Record<string, any>,
+  U extends { [K in keyof U]: (...args: any[]) => any } = Record<
+    string,
+    (...args: any[]) => any
+  >,
 > {
   /** 订阅所有项目的特定事件类型 */
   on: <T extends keyof U>(
     eventName: T,
-    callback: (itemId: K, payload: U[T]) => void,
+    callback: (itemId: K, ...payload: Parameters<U[T]>) => void,
   ) => () => void;
 }
 
@@ -134,7 +137,10 @@ export interface TGranuleScopeItemRef<
 export interface TGranuleScopeResult<
   K,
   V,
-  U extends Record<string, any> = Record<string, any>,
+  U extends { [K in keyof U]: (...args: any[]) => any } = Record<
+    string,
+    (...args: any[]) => any
+  >,
 > {
   /** 上下文提供者组件 */
   Provider: ComponentType<{

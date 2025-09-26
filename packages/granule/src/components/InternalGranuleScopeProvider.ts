@@ -20,6 +20,8 @@ import type {
   TGranuleScopeProviderProps,
 } from '../types/internal';
 
+const ELEMENT_IDENTIFIER = 'data-granule-key';
+
 /**
  * 作用域提供者组件
  *
@@ -56,7 +58,7 @@ export const GranuleScopeProvider = <
         try {
           // 立即移除 DOM 元素
           const element = containerRef.current!.querySelector(
-            `[data-granule-key="${String(id)}"]`,
+            `[${ELEMENT_IDENTIFIER}="${String(id)}"]`,
           );
           if (element) {
             element.remove();
@@ -82,7 +84,7 @@ export const GranuleScopeProvider = <
 
     // 创建 DOM 容器元素
     const element = children.createElement(state);
-    element.setAttribute('data-granule-key', String(id));
+    element.setAttribute(ELEMENT_IDENTIFIER, String(id));
 
     if (!containerRef.current) {
       throw new Error('GranuleScopeProvider: containerRef.current is null');
@@ -91,7 +93,7 @@ export const GranuleScopeProvider = <
     // 处理 insert before 功能
     if (beforeId !== undefined) {
       const beforeElement = containerRef.current.querySelector(
-        `[data-granule-key="${String(beforeId)}"]`,
+        `[${ELEMENT_IDENTIFIER}="${String(beforeId)}"]`,
       );
       if (beforeElement) {
         containerRef.current.insertBefore(element, beforeElement);
@@ -134,7 +136,7 @@ export const GranuleScopeProvider = <
     const elements: Element[] = [];
     for (const id of ids) {
       const element = containerRef.current.querySelector(
-        `[data-granule-key="${String(id)}"]`,
+        `[${ELEMENT_IDENTIFIER}="${String(id)}"]`,
       );
       if (element) {
         elements.push(element);
@@ -148,7 +150,7 @@ export const GranuleScopeProvider = <
     // 处理移动到新位置
     if (beforeId !== undefined) {
       const beforeElement = containerRef.current.querySelector(
-        `[data-granule-key="${String(beforeId)}"]`,
+        `[${ELEMENT_IDENTIFIER}="${String(beforeId)}"]`,
       );
       if (beforeElement) {
         // 按顺序插入到目标位置之前
@@ -204,8 +206,9 @@ export const GranuleScopeProvider = <
 
       // 2. 立即清理所有 DOM 元素（同步进行）
       if (containerRef.current) {
-        const elements =
-          containerRef.current.querySelectorAll('[data-granule-key]');
+        const elements = containerRef.current.querySelectorAll(
+          `[${ELEMENT_IDENTIFIER}]`,
+        );
         elements.forEach(element => {
           element.remove();
         });
