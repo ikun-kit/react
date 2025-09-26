@@ -1,0 +1,15 @@
+{
+  "env": {
+    "browser": true,
+    "es2022": true,
+    "node": true
+  },
+  "globals": {
+    "React": "readonly"
+  },
+  "rules": {
+    "correctness": "warn",
+    "suspicious": "warn",
+    "perf": "warn"
+  }
+}
