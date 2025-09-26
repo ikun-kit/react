@@ -5,3 +5,5 @@ docs/resource
 bin
 lib
 dist
+
+pnpm-lock.yaml
