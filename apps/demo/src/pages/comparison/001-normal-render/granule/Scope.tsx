@@ -22,25 +22,50 @@ interface GranuleScopeProps {
 }
 
 export function GranuleScope({ data }: GranuleScopeProps) {
+  const startTimeRef = useRef<number>(performance.now());
+
   const { Provider, controller, upwardSubscriber } = useGranuleScope<
     string,
     GranuleItemState,
     ScopeUpwardPayloadMap
   >(data);
 
-  console.time('ScopeRoot');
-
   const mountedItems = useRef<string[]>([]);
 
   useEffect(() => {
+    let firstMountTime: number;
+    let lastProgressLog = performance.now();
+
     const unsubscribeMount = upwardSubscriber.on('mounted', itemId => {
+      const mountTime = performance.now();
+
+      if (mountedItems.current.length === 0) {
+        firstMountTime = mountTime;
+        console.log(
+          `🎯 [First Item Mount] ${(mountTime - startTimeRef.current).toFixed(2)}ms after start`,
+        );
+      }
+
       if (!mountedItems.current.includes(itemId)) {
         mountedItems.current.push(itemId);
       }
+
+      // 每1000个item记录进度
+      if (mountedItems.current.length % 2000 === 0) {
+        const progressTime = mountTime - lastProgressLog;
+        console.log(
+          `🎯 [Mount Progress] ${mountedItems.current.length}/${data.length} items, Last 2000: ${progressTime.toFixed(2)}ms`,
+        );
+        lastProgressLog = mountTime;
+      }
+
       if (mountedItems.current.length >= controller.getState().length) {
-        console.timeEnd('ScopeRoot');
-        // TODO: 标记完成所有节点挂载
-        console.log('All items mounted');
+        const totalDuration = performance.now() - startTimeRef.current;
+        const renderingPhase = mountTime - firstMountTime;
+        console.log(
+          `🎯 [GranuleScope] Duration: ${totalDuration.toFixed(2)}ms (Rendering Phase: ${renderingPhase.toFixed(2)}ms)`,
+        );
+        console.log('All Granule items mounted');
       }
     });
 

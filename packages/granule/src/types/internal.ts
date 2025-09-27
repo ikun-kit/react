@@ -45,6 +45,9 @@ export interface TGranuleScopeCore<
   /** 当前所有作用域项目的状态数组 */
   state: Array<TGranuleScopeItem<K, V>>;
 
+  /** 快速查找的状态映射表 (O(1) 查找) */
+  stateMap: Map<K, TGranuleScopeItem<K, V>>;
+
   /** 作用域容器 DOM 元素的引用 */
   domRef: RefObject<HTMLDivElement>;
 

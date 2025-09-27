@@ -19,6 +19,7 @@ import type {
   TGranuleScopeMovePayload,
   TGranuleScopeProviderProps,
 } from '../types/internal';
+import { perf } from '../utils/performance-logger';
 
 const ELEMENT_IDENTIFIER = 'data-granule-key';
 
@@ -110,6 +111,71 @@ export const GranuleScopeProvider = <
     );
   };
 
+  /** 批量插入初始项目的优化实现 */
+  const batchInsertInitialItems = () => {
+    if (!containerRef.current) {
+      throw new Error('GranuleScopeProvider: containerRef.current is null');
+    }
+
+    perf.measure(
+      'Total Granule Init',
+      () => {
+        const fragment = document.createDocumentFragment();
+        const elementsToRoot: Array<{ element: Element; id: K }> = [];
+
+        // 第一步：批量创建所有 DOM 元素（在内存中）
+        perf.measure(
+          'DOM Creation',
+          () => {
+            coreContext.state.forEach(({ id, state }) => {
+              const element = children.createElement(state);
+              element.setAttribute(ELEMENT_IDENTIFIER, String(id));
+              fragment.appendChild(element);
+              elementsToRoot.push({ element, id });
+            });
+          },
+          { items: coreContext.state.length },
+        );
+
+        // 第二步：一次性插入到 DOM（只触发一次重排/重绘）
+        perf.measure('DOM Insertion', () => {
+          containerRef.current!.appendChild(fragment);
+        });
+
+        // 第三步：批量创建 React Root
+        perf.measure(
+          'React Root Creation',
+          () => {
+            elementsToRoot.forEach(({ element, id }) => {
+              const root = createRoot(element);
+              rootsRef.current.set(id, root);
+            });
+          },
+          { roots: elementsToRoot.length },
+        );
+
+        // 第四步：批量渲染组件
+        perf.measure(
+          'React Rendering',
+          () => {
+            elementsToRoot.forEach(({ id }) => {
+              const root = rootsRef.current.get(id);
+              root.render(
+                createElement(
+                  GranuleScopeCoreContext.Provider,
+                  { value: coreContext as any },
+                  children({ id }),
+                ),
+              );
+            });
+          },
+          { renders: elementsToRoot.length },
+        );
+      },
+      { totalItems: coreContext.state.length },
+    );
+  };
+
   /** 移动项目的内部实现 */
   const moveItems = (payload: TGranuleScopeMovePayload<K>): void => {
     const { ids, beforeId } = payload;
@@ -166,14 +232,18 @@ export const GranuleScopeProvider = <
     let moveDisposer: (() => void) | undefined;
 
     // 为了保证副作用运行顺序，这里使用微任务进行延迟处理
+    const microtaskStartTime = performance.now();
     window.queueMicrotask(() => {
-      coreContext.state.forEach(({ id, state }) => {
-        insertItem({ id, data: state });
-      });
+      perf.quick('Microtask Delay', microtaskStartTime);
 
-      insertDisposer = coreContext.list.onInsert(insertItem);
-      deleteDisposer = coreContext.list.onDelete(deleteItem);
-      moveDisposer = coreContext.list.onMove(moveItems);
+      // 🚀 优化：使用批量插入代替逐个插入
+      batchInsertInitialItems();
+
+      perf.measure('Event Listeners Setup', () => {
+        insertDisposer = coreContext.list.onInsert(insertItem);
+        deleteDisposer = coreContext.list.onDelete(deleteItem);
+        moveDisposer = coreContext.list.onMove(moveItems);
+      });
     });
 
     // 组件卸载时清理所有资源

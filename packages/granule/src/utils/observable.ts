@@ -1,3 +1,5 @@
+import { perf } from './performance-logger';
+
 /** 取消订阅函数类型 */
 export type Disposer = () => void;
 
@@ -79,16 +81,22 @@ export class Observable<
       console.groupEnd();
     }
 
-    handlers.forEach(handler => {
-      try {
-        handler(...payload);
-      } catch (error) {
-        console.error(
-          `[Observable] Error in event "${String(event)}" callback:`,
-          error,
-        );
-      }
-    });
+    perf.measure(
+      'Observable Broadcast',
+      () => {
+        handlers.forEach(handler => {
+          try {
+            handler(...payload);
+          } catch (error) {
+            console.error(
+              `[Observable] Error in event "${String(event)}" callback:`,
+              error,
+            );
+          }
+        });
+      },
+      { event: String(event), handlers: handlers.size },
+    );
   }
 
   /** 启用或禁用调试模式 */

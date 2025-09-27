@@ -82,8 +82,9 @@ export const useGranuleScopeItem = <
     );
   }
 
-  // 查找当前项目的状态数据
-  const item = context.state.find((item: any) => item.id === id);
+  // O(1) 快速查找当前项目的状态数据
+  const item = context.stateMap.get(id);
+
   if (!item) {
     throw new Error(`Item with id "${id}" not found in granule context`);
   }
