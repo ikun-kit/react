@@ -77,23 +77,11 @@ export interface TGranuleScopeCore<
 
   /** 项目级操作 - 针对单个作用域项目的操作 */
   item: {
-    /** 触发项目挂载事件（仅负责通知） */
-    mount: (id: K) => void;
-
-    /** 触发项目卸载事件（仅负责通知） */
-    unmount: (id: K) => void;
-
     /** 更新指定项目的状态数据（实际操作） */
     update: (id: K, data: V) => void;
 
     /** 监听指定项目的状态更新事件 */
     onUpdate: (id: K, callback: (data: V) => void) => () => void;
-
-    /** 监听指定项目的挂载事件 */
-    onMount: (id: K, callback: (data: V) => void) => () => void;
-
-    /** 监听指定项目的卸载事件 */
-    onUnmount: (id: K, callback: (data: V) => void) => () => void;
   };
 
   /** 列表级操作 - 针对整个作用域列表的操作 */
@@ -223,12 +211,6 @@ export type TGranuleScopeClearPayload<K, V> = {
 export type TGranuleScopePayloadMap<K, V> = {
   /** 项目更新事件映射：item:update:${string} -> (data: V) => void */
   [E in `item:update:${string}`]: (data: V) => void;
-} & {
-  /** 项目挂载事件映射：item:mount:${string} -> (data: V) => void */
-  [E in `item:mount:${string}`]: (data: V) => void;
-} & {
-  /** 项目卸载事件映射：item:unmount:${string} -> (data: V) => void */
-  [E in `item:unmount:${string}`]: (data: V) => void;
 } & {
   /** 列表插入事件：回调函数接收插入的项目信息 */
   'list:insert': (payload: TGranuleScopeInsertPayload<K, V>) => void;

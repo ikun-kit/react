@@ -14,7 +14,7 @@
     "dev:pkgs": "pnpm -r --parallel --filter './packages/*' run dev",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "npx oxlint && tsc --noEmit",
+    "lint": "npx oxlint && tsc --build --noEmit",
     "lint:fix": "npx oxlint --fix",
     "prepare": "husky",
     "test": "pnpm test:pkgs && pnpm test:apps",

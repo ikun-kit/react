@@ -7,8 +7,9 @@
 export interface BasicScopeUpwardPayloadMap {
   // 当项目的值发生变化时
   'value-changed': (payload: {
+    itemId: string;
+    itemName: string;
     oldValue: number;
     newValue: number;
-    itemName: string;
   }) => void;
 }

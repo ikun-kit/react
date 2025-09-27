@@ -57,18 +57,21 @@ export function BasicScope({ data, onReload }: BasicScopeProps) {
     setEventLogs(prev => [newLog, ...prev.slice(0, 9)]); // 只保留最新的10条
   };
 
+  console.log('外层容器函数体执行, items:', data.length);
+
   // 监听向上通信事件
   useEffect(() => {
+    console.log(`外层容器渲染, Provider render items: ${data.length}`);
     // 监听值变化事件
     const unsubscribeValueChanged = upwardSubscriber.on(
       'value-changed',
-      (itemId, payload) => {
-        const itemState = controller.getItem(itemId);
+      payload => {
+        const itemState = controller.getItem(payload.itemId);
         addEventLog(
-          itemId,
+          payload.itemId,
           'value-changed',
           payload,
-          `${itemState?.state.name || itemId} 的值从 ${payload.oldValue} 变为 ${payload.newValue}`,
+          `${itemState?.state.name || payload.itemId} 的值从 ${payload.oldValue} 变为 ${payload.newValue}`,
         );
       },
     );

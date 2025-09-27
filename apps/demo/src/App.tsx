@@ -1,19 +1,9 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 
-import { AdvancedDemo } from './pages/advanced';
-import { BasicDemo } from './pages/basic';
-import { ComparisonDemo } from './pages/comparison';
-import { HomePage } from './pages/home';
+import { routes } from './routes';
+
+const router = createBrowserRouter(routes);
 
 export const App = () => {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/basic" element={<BasicDemo />} />
-        <Route path="/advanced" element={<AdvancedDemo />} />
-        <Route path="/comparison" element={<ComparisonDemo />} />
-      </Routes>
-    </BrowserRouter>
-  );
+  return <RouterProvider router={router} />;
 };

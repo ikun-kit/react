@@ -45,36 +45,27 @@ export const GranuleScopeProvider = <
 
   /** 删除项目的内部实现 */
   const deleteItem = (id: K): void => {
-    console.debug('Deleting item:', id);
-
-    // 通知卸载事件
-    coreContext.item.unmount(id);
-
     // 异步卸载 React Root
     const root = rootsRef.current.get(id);
 
-    if (root) {
-      window.queueMicrotask(() => {
-        try {
-          // 立即移除 DOM 元素
-          const element = containerRef.current!.querySelector(
-            `[${ELEMENT_IDENTIFIER}="${String(id)}"]`,
-          );
-          if (element) {
-            element.remove();
-          }
+    try {
+      root.unmount();
 
-          // 清理 imperative API
-          coreContext.unregisterImperative(id);
+      // 立即移除 DOM 元素
+      const element = containerRef.current!.querySelector(
+        `[${ELEMENT_IDENTIFIER}="${String(id)}"]`,
+      );
+      if (element) {
+        element.remove();
+      }
 
-          // 清理 react root 缓存
-          rootsRef.current.delete(id);
+      // 清理 imperative API
+      coreContext.unregisterImperative(id);
 
-          root.unmount();
-        } catch (error) {
-          console.warn('Error unmounting root for item:', id, error);
-        }
-      });
+      // 清理 react root 缓存
+      rootsRef.current.delete(id);
+    } catch (error) {
+      console.warn('Error unmounting root for item:', id, error);
     }
   };
 
@@ -117,11 +108,6 @@ export const GranuleScopeProvider = <
         children({ id }),
       ),
     );
-
-    // 使用微任务延迟触发挂载事件
-    window.queueMicrotask(() => {
-      coreContext.item.mount(id);
-    });
   };
 
   /** 移动项目的内部实现 */
@@ -200,7 +186,6 @@ export const GranuleScopeProvider = <
 
       // 1. 先触发所有项目的卸载事件并清理 imperative API
       coreContext.state.forEach(({ id }) => {
-        coreContext.item.unmount(id);
         coreContext.unregisterImperative(id);
       });
 

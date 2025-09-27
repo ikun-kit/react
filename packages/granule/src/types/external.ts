@@ -8,6 +8,7 @@
  */
 import type { CSSProperties, ComponentType, ReactNode, RefObject } from 'react';
 
+import { ExtractCallback } from '../utils/observable';
 import {
   TGranuleScopeInsertPayload,
   TGranuleScopeItem,
@@ -75,23 +76,15 @@ export interface TGranuleScopeSubscriber<K, V> {
 
   /** 监听指定项目的状态更新事件 */
   onItemUpdate(id: K, callback: (data: V) => void): () => void;
-
-  /** 监听指定项目的挂载事件 */
-  onItemMount(id: K, callback: (data: V) => void): () => void;
-
-  /** 监听指定项目的卸载事件 */
-  onItemUnmount(id: K, callback: (data: V) => void): () => void;
 }
 
 /**
  * 向上通信订阅器接口
  * 专门用于订阅子组件向父组件发送的事件
  *
- * @template K - 项目 ID 的类型
  * @template U - 向上通信事件载荷映射类型
  */
 export interface TGranuleScopeUpwardSubscriber<
-  K,
   U extends { [K in keyof U]: (...args: any[]) => any } = Record<
     string,
     (...args: any[]) => any
@@ -100,7 +93,7 @@ export interface TGranuleScopeUpwardSubscriber<
   /** 订阅所有项目的特定事件类型 */
   on: <T extends keyof U>(
     eventName: T,
-    callback: (itemId: K, ...payload: Parameters<U[T]>) => void,
+    callback: ExtractCallback<U, T>,
   ) => () => void;
 }
 
@@ -159,7 +152,7 @@ export interface TGranuleScopeResult<
   subscriber: TGranuleScopeSubscriber<K, V>;
 
   /** 向上通信订阅器 API */
-  upwardSubscriber: TGranuleScopeUpwardSubscriber<K, U>;
+  upwardSubscriber: TGranuleScopeUpwardSubscriber<U>;
 
   /** 作用域容器 DOM 元素的引用 */
   domRef: RefObject<HTMLDivElement>;

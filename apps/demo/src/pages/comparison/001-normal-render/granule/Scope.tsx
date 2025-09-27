@@ -28,6 +28,8 @@ export function GranuleScope({ data }: GranuleScopeProps) {
     ScopeUpwardPayloadMap
   >(data);
 
+  console.time('ScopeRoot');
+
   const mountedItems = useRef<string[]>([]);
 
   useEffect(() => {
@@ -36,6 +38,7 @@ export function GranuleScope({ data }: GranuleScopeProps) {
         mountedItems.current.push(itemId);
       }
       if (mountedItems.current.length >= controller.getState().length) {
+        console.timeEnd('ScopeRoot');
         // TODO: 标记完成所有节点挂载
         console.log('All items mounted');
       }

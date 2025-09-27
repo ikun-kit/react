@@ -55,30 +55,6 @@ export const useInternalGranuleScopeCore = <
 
     // 项目级操作 - 针对单个作用域项目的操作
     const item: TGranuleScopeCore<K, V>['item'] = {
-      /** 触发指定项目的挂载事件 */
-      mount: (id: K) => {
-        const item = state.find(item => item.id === id);
-
-        if (!item) {
-          console.warn(`[GranuleScope] item ${id} not found`);
-          return;
-        }
-
-        observable.broadcast(`item:mount:${id}`, item.state);
-      },
-
-      /** 触发指定项目的卸载事件 */
-      unmount: (id: K) => {
-        const item = state.find(item => item.id === id);
-
-        if (!item) {
-          console.warn(`[GranuleScope] item ${id} not found`);
-          return;
-        }
-
-        observable.broadcast(`item:unmount:${id}`, item.state);
-      },
-
       /** 更新指定项目的状态数据 */
       update: (id: K, data: V) => {
         const itemIndex = state.findIndex(item => item.id === id);
@@ -96,16 +72,6 @@ export const useInternalGranuleScopeCore = <
       /** 订阅指定项目的更新事件 */
       onUpdate: (id: K, callback: (data: V) => void) => {
         return observable.subscribe(`item:update:${id}`, callback);
-      },
-
-      /** 订阅指定项目的挂载事件 */
-      onMount: (id: K, callback: (data: V) => void) => {
-        return observable.subscribe(`item:mount:${id}`, callback);
-      },
-
-      /** 订阅指定项目的卸载事件 */
-      onUnmount: (id: K, callback: (data: V) => void) => {
-        return observable.subscribe(`item:unmount:${id}`, callback);
       },
     };
 
@@ -146,8 +112,6 @@ export const useInternalGranuleScopeCore = <
 
         // 2. 清理该 item 的所有监听器
         observable.clear(`item:update:${id}`);
-        observable.clear(`item:mount:${id}`);
-        observable.clear(`item:unmount:${id}`);
 
         // 3. 清理该 item 的 imperative API
         imperativeAPIRegistry.delete(id);

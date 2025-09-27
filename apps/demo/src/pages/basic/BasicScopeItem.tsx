@@ -5,6 +5,7 @@ import {
 
 import { clsx } from 'clsx';
 import { useEffect, useState } from 'react';
+import { useMount, useUnmount } from 'react-use';
 
 import type { BasicScopeUpwardPayloadMap } from './types';
 
@@ -61,24 +62,24 @@ export function BasicScopeItem(props: BasicScopeItemProps) {
     item.registerImperative(api);
   }, [item, localState, props.id]);
 
+  useMount(() => {
+    console.log(`Item 已挂载, id: ${props.id}`);
+  });
+
+  useUnmount(() => {
+    console.log(`Item 已卸载, id: ${props.id}`);
+  });
+
   useEffect(() => {
-    const unsubscribeMount = item.onMount((data: BasicItemState) => {
-      console.log('项目已挂载:', data);
-    });
+    console.log(`Item 渲染, id: ${props.id}`);
 
     const unsubscribeUpdate = item.onUpdate((newState: BasicItemState) => {
-      console.log('项目已更新:', newState);
+      console.log('Item 已更新:', newState);
       setLocalState(newState);
     });
 
-    const unsubscribeUnmount = item.onUnmount((data: BasicItemState) => {
-      console.log('项目已卸载:', data);
-    });
-
     return () => {
-      unsubscribeMount();
       unsubscribeUpdate();
-      unsubscribeUnmount();
     };
   }, [item]);
 
@@ -140,9 +141,10 @@ export function BasicScopeItem(props: BasicScopeItemProps) {
 
               // 发射向上事件：值发生变化
               item.emit('value-changed', {
+                itemId: props.id,
+                itemName: localState.name,
                 oldValue: localState.value,
                 newValue: newValue,
-                itemName: localState.name,
               });
             }}
             variant="success"
@@ -161,9 +163,10 @@ export function BasicScopeItem(props: BasicScopeItemProps) {
 
               // 发射向上事件：值发生变化
               item.emit('value-changed', {
+                itemId: props.id,
+                itemName: localState.name,
                 oldValue: localState.value,
                 newValue: newValue,
-                itemName: localState.name,
               });
             }}
             variant="danger"

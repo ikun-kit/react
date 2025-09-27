@@ -21,6 +21,7 @@ import type {
   TGranuleScopeMovePayload,
   TGranuleScopeProviderProps,
 } from '../types/internal';
+import { ExtractCallback } from '../utils/observable';
 import { useInternalGranuleScopeCore } from './useInternalGranuleScopeCore';
 
 /**
@@ -92,34 +93,17 @@ export function useGranuleScope<
       onItemUpdate: (id: K, callback: (data: V) => void): (() => void) => {
         return scopeCore.item.onUpdate(id, callback);
       },
-
-      onItemMount: (id: K, callback: (data: V) => void): (() => void) => {
-        return scopeCore.item.onMount(id, callback);
-      },
-
-      onItemUnmount: (id: K, callback: (data: V) => void): (() => void) => {
-        return scopeCore.item.onUnmount(id, callback);
-      },
     };
   }, [scopeCore]);
 
   // 创建向上通信订阅器 API
-  const upwardSubscriber = useMemo((): TGranuleScopeUpwardSubscriber<K, U> => {
+  const upwardSubscriber = useMemo((): TGranuleScopeUpwardSubscriber<U> => {
     return {
       on: <T extends keyof U>(
         eventName: T,
-        callback: (itemId: K, ...payload: Parameters<U[T]>) => void,
+        callback: ExtractCallback<U, T>,
       ) => {
-        return scopeCore.upward.subscribe(eventName, ((data: any) => {
-          if (
-            data &&
-            typeof data === 'object' &&
-            'itemId' in data &&
-            'payload' in data
-          ) {
-            callback(data.itemId as K, ...data.payload);
-          }
-        }) as U[T]);
+        return scopeCore.upward.subscribe(eventName, callback);
       },
     };
   }, [scopeCore]);

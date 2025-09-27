@@ -1,6 +1,6 @@
 import { useGranuleScopeItem } from '@ikun-kit/react-granule';
 
-import { useEffect } from 'react';
+import { useMount } from 'react-use';
 
 import { ScopeUpwardPayloadMap } from './types';
 
@@ -14,24 +14,15 @@ export interface GranuleScopeItemProps {
 }
 
 export function GranuleScopeItem(props: GranuleScopeItemProps) {
-  const {
-    state: localState,
-    onMount,
-    emit,
-  } = useGranuleScopeItem<string, GranuleItemState, ScopeUpwardPayloadMap>(
-    props.id,
-  );
+  const { state: localState, emit } = useGranuleScopeItem<
+    string,
+    GranuleItemState,
+    ScopeUpwardPayloadMap
+  >(props.id);
 
-  useEffect(() => {
-    const unsubscribeMount = onMount((data: GranuleItemState) => {
-      emit('mounted', props.id);
-      console.log('项目已挂载:', data);
-    });
-
-    return () => {
-      unsubscribeMount();
-    };
-  }, [onMount]);
+  useMount(() => {
+    emit('mounted', props.id);
+  });
 
   return (
     <div className="p-4 bg-gray-700 rounded-md border border-gray-600 mb-3 hover:bg-gray-650 transition-colors">

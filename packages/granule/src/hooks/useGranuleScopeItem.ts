@@ -36,12 +36,6 @@ export interface TGranuleScopeItemHookResult<
   /** 获取所有项目的只读状态 */
   getState: () => ReadonlyArray<TGranuleScopeItem<K, V>>;
 
-  /** 注册挂载事件回调 */
-  onMount: (callback: (data: V) => void) => () => void;
-
-  /** 注册卸载事件回调 */
-  onUnmount: (callback: (data: V) => void) => () => void;
-
   /** 注册更新事件回调 */
   onUpdate: (callback: (newState: V) => void) => () => void;
 
@@ -127,15 +121,6 @@ export const useGranuleScopeItem = <
       return context.state;
     },
 
-    // 当前项目事件监听
-    onMount: (callback: (data: V) => void) => {
-      return context.item.onMount(id, callback);
-    },
-
-    onUnmount: (callback: (data: V) => void) => {
-      return context.item.onUnmount(id, callback);
-    },
-
     onUpdate: (callback: (newState: V) => void) => {
       return context.item.onUpdate(id, callback);
     },
@@ -159,10 +144,7 @@ export const useGranuleScopeItem = <
       ...payload: ExtractPayload<U, T>
     ) => {
       // 发射事件类型（包含 itemId 和 payload）
-      context.upward.emit(eventName as any, {
-        itemId: id,
-        payload: payload[0],
-      });
+      context.upward.emit(eventName as any, ...payload);
     },
   };
 };
