@@ -65,7 +65,10 @@ export class Observable<
     ...payload: Parameters<CallbackMap[K]>
   ): void {
     const handlers = this.handlerMap.get(event);
-    if (!handlers) return;
+    if (!handlers) {
+      console.warn(`[Observable] No subscribers for event: ${String(event)}`);
+      return;
+    }
 
     // 调试模式下打印事件信息
     if (this.debugMode) {

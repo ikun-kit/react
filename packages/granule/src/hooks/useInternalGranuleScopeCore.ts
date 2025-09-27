@@ -60,7 +60,8 @@ export const useInternalGranuleScopeCore = <
         const item = state.find(item => item.id === id);
 
         if (!item) {
-          throw new Error(`[GranuleScope] item ${id} not found`);
+          console.warn(`[GranuleScope] item ${id} not found`);
+          return;
         }
 
         observable.broadcast(`item:mount:${id}`, item.state);
@@ -71,7 +72,8 @@ export const useInternalGranuleScopeCore = <
         const item = state.find(item => item.id === id);
 
         if (!item) {
-          throw new Error(`[GranuleScope] item ${id} not found`);
+          console.warn(`[GranuleScope] item ${id} not found`);
+          return;
         }
 
         observable.broadcast(`item:unmount:${id}`, item.state);
@@ -81,7 +83,7 @@ export const useInternalGranuleScopeCore = <
       update: (id: K, data: V) => {
         const itemIndex = state.findIndex(item => item.id === id);
         if (itemIndex === -1) {
-          throw new Error(
+          console.warn(
             `GranuleScope: cannot update non-existent item with id ${id}`,
           );
         }
