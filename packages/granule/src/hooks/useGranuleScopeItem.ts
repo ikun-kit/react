@@ -89,63 +89,83 @@ export const useGranuleScopeItem = <
     throw new Error(`Item with id "${id}" not found in granule context`);
   }
 
-  // 创建 item 专用的 domRef
+  // 优化的 domRef，缓存查询结果
   const domRef = useMemo(() => {
+    let cachedElement: HTMLElement | null = null;
+    let lastContainer: HTMLDivElement | null = null;
+
     return {
       get current() {
         const container = context.domRef.current;
-        if (!container) return null;
-        return container.querySelector(
-          `[data-granule-key="${String(id)}"]`,
-        ) as HTMLElement;
+
+        // 容器未变且已缓存，直接返回
+        if (container === lastContainer && cachedElement) {
+          return cachedElement;
+        }
+
+        // 容器变化或首次访问，重新查询
+        if (container) {
+          cachedElement = container.querySelector(
+            `[data-granule-key="${String(id)}"]`,
+          ) as HTMLElement;
+          lastContainer = container;
+        } else {
+          cachedElement = null;
+          lastContainer = null;
+        }
+
+        return cachedElement;
       },
     } as React.RefObject<HTMLElement>;
   }, [context.domRef, id]);
 
-  return {
-    state: item.state,
+  // 缓存返回对象，避免每次render创建新对象
+  return useMemo(
+    () => ({
+      state: item.state,
 
-    // 当前项目操作
-    update: (data: V) => {
-      context.item.update(id, data);
-    },
+      // 当前项目操作 - 缓存函数引用
+      update: (data: V) => {
+        context.item.update(id, data);
+      },
 
-    delete: () => {
-      context.list.delete(id);
-    },
+      delete: () => {
+        context.list.delete(id);
+      },
 
-    move: (beforeId?: K) => {
-      context.list.move([id], beforeId);
-    },
+      move: (beforeId?: K) => {
+        context.list.move([id], beforeId);
+      },
 
-    getState: (): ReadonlyArray<TGranuleScopeItem<K, V>> => {
-      return context.state;
-    },
+      getState: (): ReadonlyArray<TGranuleScopeItem<K, V>> => {
+        return context.state;
+      },
 
-    onUpdate: (callback: (newState: V) => void) => {
-      return context.item.onUpdate(id, callback);
-    },
+      onUpdate: (callback: (newState: V) => void) => {
+        return context.item.onUpdate(id, callback);
+      },
 
-    // 列表操作（仍需要传入新项目的参数）
-    insert: (newId: K, data: V, beforeId?: K) => {
-      context.list.insert(newId, data, beforeId);
-    },
+      // 列表操作（仍需要传入新项目的参数）
+      insert: (newId: K, data: V, beforeId?: K) => {
+        context.list.insert(newId, data, beforeId);
+      },
 
-    // DOM 引用
-    domRef,
+      // DOM 引用
+      domRef,
 
-    // imperative API 管理
-    registerImperative: (api: any) => {
-      context.registerImperative(id, api);
-    },
+      // imperative API 管理
+      registerImperative: (api: any) => {
+        context.registerImperative(id, api);
+      },
 
-    // 向上通信
-    emit: <T extends keyof U>(
-      eventName: T,
-      ...payload: ExtractPayload<U, T>
-    ) => {
-      // 发射事件类型（包含 itemId 和 payload）
-      context.upward.emit(eventName as any, ...payload);
-    },
-  };
+      // 向上通信
+      emit: <T extends keyof U>(
+        eventName: T,
+        ...payload: ExtractPayload<U, T>
+      ) => {
+        context.upward.emit(eventName as any, ...payload);
+      },
+    }),
+    [item.state, context, id, domRef],
+  );
 };

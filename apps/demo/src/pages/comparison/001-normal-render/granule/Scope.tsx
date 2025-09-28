@@ -1,5 +1,6 @@
 import {
   type TGranuleScopeItem,
+  perf,
   useGranuleScope,
 } from '@ikun-kit/react-granule';
 
@@ -22,8 +23,6 @@ interface GranuleScopeProps {
 }
 
 export function GranuleScope({ data }: GranuleScopeProps) {
-  const startTimeRef = useRef<number>(performance.now());
-
   const { Provider, controller, upwardSubscriber } = useGranuleScope<
     string,
     GranuleItemState,
@@ -33,38 +32,33 @@ export function GranuleScope({ data }: GranuleScopeProps) {
   const mountedItems = useRef<string[]>([]);
 
   useEffect(() => {
-    let firstMountTime: number;
-    let lastProgressLog = performance.now();
+    // 重置状态，避免热更新时累积旧数据
+    mountedItems.current = [];
+
+    // 开始计时
+    perf.point('GranuleScope Total');
+    perf.point('GranuleScope First Mount');
 
     const unsubscribeMount = upwardSubscriber.on('mounted', itemId => {
-      const mountTime = performance.now();
-
       if (mountedItems.current.length === 0) {
-        firstMountTime = mountTime;
-        console.log(
-          `🎯 [First Item Mount] ${(mountTime - startTimeRef.current).toFixed(2)}ms after start`,
-        );
+        perf.span('GranuleScope First Mount');
       }
 
       if (!mountedItems.current.includes(itemId)) {
         mountedItems.current.push(itemId);
       }
 
-      // 每1000个item记录进度
+      // 每2000个item记录进度
       if (mountedItems.current.length % 2000 === 0) {
-        const progressTime = mountTime - lastProgressLog;
         console.log(
-          `🎯 [Mount Progress] ${mountedItems.current.length}/${data.length} items, Last 2000: ${progressTime.toFixed(2)}ms`,
+          `🎯 [Mount Progress] ${mountedItems.current.length}/${data.length} items mounted`,
         );
-        lastProgressLog = mountTime;
       }
 
       if (mountedItems.current.length >= controller.getState().length) {
-        const totalDuration = performance.now() - startTimeRef.current;
-        const renderingPhase = mountTime - firstMountTime;
-        console.log(
-          `🎯 [GranuleScope] Duration: ${totalDuration.toFixed(2)}ms (Rendering Phase: ${renderingPhase.toFixed(2)}ms)`,
-        );
+        perf.span('GranuleScope Total', {
+          totalItems: mountedItems.current.length,
+        });
         console.log('All Granule items mounted');
       }
     });

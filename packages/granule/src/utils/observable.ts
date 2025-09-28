@@ -81,22 +81,21 @@ export class Observable<
       console.groupEnd();
     }
 
-    perf.measure(
-      'Observable Broadcast',
-      () => {
-        handlers.forEach(handler => {
-          try {
-            handler(...payload);
-          } catch (error) {
-            console.error(
-              `[Observable] Error in event "${String(event)}" callback:`,
-              error,
-            );
-          }
-        });
-      },
-      { event: String(event), handlers: handlers.size },
-    );
+    perf.point('Observable Broadcast');
+    handlers.forEach(handler => {
+      try {
+        handler(...payload);
+      } catch (error) {
+        console.error(
+          `[Observable] Error in event "${String(event)}" callback:`,
+          error,
+        );
+      }
+    });
+    perf.span('Observable Broadcast', {
+      event: String(event),
+      handlers: handlers.size,
+    });
   }
 
   /** 启用或禁用调试模式 */

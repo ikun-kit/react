@@ -44,6 +44,9 @@ export const GranuleScopeProvider = <
   // 存储每个项目的 React Root 实例，用于正确的资源清理
   const rootsRef = useRef<Map<K, any>>(new Map());
 
+  // 移除Context缓存，避免热更新时的状态不一致问题
+  // const cachedContextValue = useMemo(() => coreContext, [coreContext]);
+
   /** 删除项目的内部实现 */
   const deleteItem = (id: K): void => {
     // 异步卸载 React Root
@@ -117,63 +120,48 @@ export const GranuleScopeProvider = <
       throw new Error('GranuleScopeProvider: containerRef.current is null');
     }
 
-    perf.measure(
-      'Total Granule Init',
-      () => {
-        const fragment = document.createDocumentFragment();
-        const elementsToRoot: Array<{ element: Element; id: K }> = [];
+    perf.point('Total Granule Init');
+    const fragment = document.createDocumentFragment();
+    const elementsToRoot: Array<{ element: Element; id: K }> = [];
 
-        // 第一步：批量创建所有 DOM 元素（在内存中）
-        perf.measure(
-          'DOM Creation',
-          () => {
-            coreContext.state.forEach(({ id, state }) => {
-              const element = children.createElement(state);
-              element.setAttribute(ELEMENT_IDENTIFIER, String(id));
-              fragment.appendChild(element);
-              elementsToRoot.push({ element, id });
-            });
-          },
-          { items: coreContext.state.length },
-        );
+    // 第一步：批量创建所有 DOM 元素（在内存中）
+    perf.point('DOM Creation');
+    coreContext.state.forEach(({ id, state }) => {
+      const element = children.createElement(state);
+      element.setAttribute(ELEMENT_IDENTIFIER, String(id));
+      fragment.appendChild(element);
+      elementsToRoot.push({ element, id });
+    });
+    perf.span('DOM Creation', { items: coreContext.state.length });
 
-        // 第二步：一次性插入到 DOM（只触发一次重排/重绘）
-        perf.measure('DOM Insertion', () => {
-          containerRef.current!.appendChild(fragment);
-        });
+    // 第二步：一次性插入到 DOM（只触发一次重排/重绘）
+    perf.point('DOM Insertion');
+    containerRef.current!.appendChild(fragment);
+    perf.span('DOM Insertion');
 
-        // 第三步：批量创建 React Root
-        perf.measure(
-          'React Root Creation',
-          () => {
-            elementsToRoot.forEach(({ element, id }) => {
-              const root = createRoot(element);
-              rootsRef.current.set(id, root);
-            });
-          },
-          { roots: elementsToRoot.length },
-        );
+    // 第三步：优化的Root创建（保持同步，避免时序问题）
+    perf.point('React Root Creation');
+    elementsToRoot.forEach(({ element, id }) => {
+      const root = createRoot(element);
+      rootsRef.current.set(id, root);
+    });
+    perf.span('React Root Creation', { roots: elementsToRoot.length });
 
-        // 第四步：批量渲染组件
-        perf.measure(
-          'React Rendering',
-          () => {
-            elementsToRoot.forEach(({ id }) => {
-              const root = rootsRef.current.get(id);
-              root.render(
-                createElement(
-                  GranuleScopeCoreContext.Provider,
-                  { value: coreContext as any },
-                  children({ id }),
-                ),
-              );
-            });
-          },
-          { renders: elementsToRoot.length },
-        );
-      },
-      { totalItems: coreContext.state.length },
-    );
+    // 第四步：批量渲染组件
+    perf.point('React Rendering');
+    elementsToRoot.forEach(({ id }) => {
+      const root = rootsRef.current.get(id);
+      root.render(
+        createElement(
+          GranuleScopeCoreContext.Provider,
+          { value: coreContext as any },
+          children({ id }),
+        ),
+      );
+    });
+    perf.span('React Rendering', { renders: elementsToRoot.length });
+
+    perf.span('Total Granule Init', { totalItems: coreContext.state.length });
   };
 
   /** 移动项目的内部实现 */
@@ -239,11 +227,11 @@ export const GranuleScopeProvider = <
       // 🚀 优化：使用批量插入代替逐个插入
       batchInsertInitialItems();
 
-      perf.measure('Event Listeners Setup', () => {
-        insertDisposer = coreContext.list.onInsert(insertItem);
-        deleteDisposer = coreContext.list.onDelete(deleteItem);
-        moveDisposer = coreContext.list.onMove(moveItems);
-      });
+      perf.point('Event Listeners Setup');
+      insertDisposer = coreContext.list.onInsert(insertItem);
+      deleteDisposer = coreContext.list.onDelete(deleteItem);
+      moveDisposer = coreContext.list.onMove(moveItems);
+      perf.span('Event Listeners Setup');
     });
 
     // 组件卸载时清理所有资源

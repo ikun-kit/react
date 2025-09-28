@@ -1,7 +1,8 @@
 /**
- * 性能记录工具 - 用于精确定位性能瓶颈
+ * 性能记录工具 - 类似 console.time/timeEnd 的高性能计时工具
  *
  * 提供轻量级的性能监控，只记录超过阈值的操作
+ * 支持全局开关控制，生产环境可关闭
  */
 
 export interface PerformanceLoggerConfig {
@@ -20,25 +21,25 @@ export class PerformanceLogger {
   constructor(config: Partial<PerformanceLoggerConfig> = {}) {
     this.config = {
       threshold: 2, // 默认超过2ms才打印
-      enabled: true,
+      enabled: process.env.NODE_ENV === 'development', // 仅开发环境启用
       prefix: '🎯',
       ...config,
     };
   }
 
-  /** 开始计时 */
-  start(label: string): void {
+  /** 打标记点 - 开始计时 */
+  point(label: string): void {
     if (!this.config.enabled) return;
     this.activeTimers.set(label, performance.now());
   }
 
-  /** 结束计时并记录（如果超过阈值） */
-  end(label: string, context?: Record<string, any>): number {
+  /** 计算时间跨度并记录 */
+  span(label: string, context?: Record<string, any>): number {
     if (!this.config.enabled) return 0;
 
     const startTime = this.activeTimers.get(label);
     if (!startTime) {
-      console.warn(`PerformanceLogger: Timer "${label}" was not started`);
+      console.warn(`PerformanceLogger: Point "${label}" was not marked`);
       return 0;
     }
 
@@ -59,37 +60,19 @@ export class PerformanceLogger {
     return duration;
   }
 
-  /** 测量同步函数执行时间 */
-  measure<T>(label: string, fn: () => T, context?: Record<string, any>): T {
-    if (!this.config.enabled) return fn();
+  /** 立即记录一个已知的时间段 */
+  log(label: string, duration: number, context?: Record<string, any>): void {
+    if (!this.config.enabled) return;
 
-    this.start(label);
-    try {
-      const result = fn();
-      this.end(label, context);
-      return result;
-    } catch (error) {
-      this.end(label, { ...context, error: true });
-      throw error;
-    }
-  }
-
-  /** 测量异步函数执行时间 */
-  async measureAsync<T>(
-    label: string,
-    fn: () => Promise<T>,
-    context?: Record<string, any>,
-  ): Promise<T> {
-    if (!this.config.enabled) return fn();
-
-    this.start(label);
-    try {
-      const result = await fn();
-      this.end(label, context);
-      return result;
-    } catch (error) {
-      this.end(label, { ...context, error: true });
-      throw error;
+    if (duration >= this.config.threshold) {
+      const contextStr = context
+        ? ` | ${Object.entries(context)
+            .map(([k, v]) => `${k}: ${v}`)
+            .join(', ')}`
+        : '';
+      console.log(
+        `${this.config.prefix} [${label}] ${duration.toFixed(2)}ms${contextStr}`,
+      );
     }
   }
 
@@ -130,29 +113,45 @@ export class PerformanceLogger {
     this.config.threshold = threshold;
   }
 
-  /** 清理所有活跃计时器 */
-  clear(): void {
+  /** 清理指定标记点 */
+  clearPoint(label: string): boolean {
+    return this.activeTimers.delete(label);
+  }
+
+  /** 清理所有活跃标记点 */
+  clearAll(): void {
     this.activeTimers.clear();
+  }
+
+  /** 获取所有活跃标记点的标签 */
+  getActivePoints(): string[] {
+    return Array.from(this.activeTimers.keys());
   }
 }
 
 // 默认实例
 export const perfLogger = new PerformanceLogger();
 
-// 便捷函数
+// 便捷函数 - 打点计时
 export const perf = {
-  start: (label: string) => perfLogger.start(label),
-  end: (label: string, context?: Record<string, any>) =>
-    perfLogger.end(label, context),
-  measure: <T>(label: string, fn: () => T, context?: Record<string, any>) =>
-    perfLogger.measure(label, fn, context),
-  measureAsync: <T>(
-    label: string,
-    fn: () => Promise<T>,
-    context?: Record<string, any>,
-  ) => perfLogger.measureAsync(label, fn, context),
+  /** 打标记点 */
+  point: (label: string) => perfLogger.point(label),
+  /** 计算时间跨度 */
+  span: (label: string, context?: Record<string, any>) =>
+    perfLogger.span(label, context),
+  /** 立即记录时间 */
+  log: (label: string, duration: number, context?: Record<string, any>) =>
+    perfLogger.log(label, duration, context),
+  /** 快速记录（从时间戳开始） */
   quick: (label: string, startTime: number, context?: Record<string, any>) =>
     perfLogger.quick(label, startTime, context),
+
+  // 标记点管理
+  clearPoint: (label: string) => perfLogger.clearPoint(label),
+  clearAll: () => perfLogger.clearAll(),
+  getActivePoints: () => perfLogger.getActivePoints(),
+
+  // 配置相关
   configure: (config: Partial<PerformanceLoggerConfig>) =>
     perfLogger.configure(config),
   setEnabled: (enabled: boolean) => perfLogger.setEnabled(enabled),

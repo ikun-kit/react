@@ -10,3 +10,6 @@ export type * from './types/external';
 
 // 所有 Hooks（向后兼容）
 export * from './hooks/index.external';
+
+// 工具
+export * from './utils/performance-logger';

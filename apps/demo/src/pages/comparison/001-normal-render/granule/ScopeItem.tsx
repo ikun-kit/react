@@ -14,7 +14,7 @@ export interface GranuleScopeItemProps {
 }
 
 export function GranuleScopeItem(props: GranuleScopeItemProps) {
-  const { state: localState, emit } = useGranuleScopeItem<
+  const { state, emit } = useGranuleScopeItem<
     string,
     GranuleItemState,
     ScopeUpwardPayloadMap
@@ -32,7 +32,7 @@ export function GranuleScopeItem(props: GranuleScopeItemProps) {
             <span className="[width:40px] text-xs text-right text-gray-400">
               name:
             </span>
-            <span className="text-xs text-white">{localState.name}</span>
+            <span className="text-xs text-white">{state.name}</span>
           </div>
           <div className="flex gap-1">
             <span className="[width:40px] text-xs text-right text-gray-400">
@@ -41,9 +41,7 @@ export function GranuleScopeItem(props: GranuleScopeItemProps) {
             <span className="text-xs text-white">{props.id}</span>
           </div>
         </h4>
-        <span className="text-sm text-gray-400 font-mono">
-          {localState.value}
-        </span>
+        <span className="text-sm text-gray-400 font-mono">{state.value}</span>
       </div>
     </div>
   );

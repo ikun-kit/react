@@ -1,3 +1,5 @@
+import { perf } from '@ikun-kit/react-granule';
+
 import { useRef } from 'react';
 
 import { ReactNativeScopeItem } from './ScopeItem';
@@ -9,16 +11,22 @@ interface ReactNativeScopeProps {
 
 export function ReactNativeScope({ data }: ReactNativeScopeProps) {
   const mountedItems = useRef<Set<string>>(new Set());
-  const startTimeRef = useRef<number>(performance.now());
+  const isTimingStarted = useRef(false);
 
   const handleItemMount = (id: string) => {
+    if (!isTimingStarted.current) {
+      perf.point('ReactNativeScope Total');
+      isTimingStarted.current = true;
+    }
+
     if (!mountedItems.current.has(id)) {
       mountedItems.current.add(id);
 
       // 当所有项目都挂载完成时
       if (mountedItems.current.size >= data.length) {
-        const duration = performance.now() - startTimeRef.current;
-        console.log(`🎯 [ReactNativeScope] Duration: ${duration.toFixed(2)}ms`);
+        perf.span('ReactNativeScope Total', {
+          totalItems: mountedItems.current.size,
+        });
         console.log('All React Native items mounted');
       }
     }
